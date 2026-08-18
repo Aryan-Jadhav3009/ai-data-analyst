@@ -1,0 +1,211 @@
+'use client'
+import {BarChart,Bar,CartesianGrid,LineChart,Line,} from "recharts"
+import { analyzeResult } from "@/lib/analyst"
+import { useEffect, useMemo, useState } from 'react'
+import { Area, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { Activity, BarChart3, Check, ChevronDown, Clock3, Copy, Database as DatabaseIcon, FileText, LayoutDashboard, Menu, Plus, RefreshCw, Send, Settings2, Sparkles, Table2, X } from 'lucide-react'
+import { api, type ConnectionInput, type Database, type QueryResult } from '@/lib/api'
+
+const examples = ['Which tables have the most records?', 'Show me a summary of the available data', 'Compare the key values across my tables']
+const emptyConnection: ConnectionInput = { name: '', host: '', port: '5432', database_name: '', username: '', password: '' }
+
+type View = 'workspace' | 'history' | 'settings'
+
+function GlassButton({ children, onClick, primary = false, disabled = false, type = 'button' }: { children: React.ReactNode; onClick?: () => void; primary?: boolean; disabled?: boolean; type?: 'button' | 'submit' }) {
+  return <button type={type} disabled={disabled} onClick={onClick} className={`shine inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition duration-200 disabled:cursor-not-allowed disabled:opacity-50 ${primary ? 'border-cyan-200/20 bg-gradient-to-r from-violet-500/90 to-cyan-400/90 text-white shadow-[0_0_28px_rgba(86,207,255,.24)] hover:brightness-110' : 'border-white/15 bg-white/[.08] text-slate-200 hover:border-white/25 hover:bg-white/[.14]'}`}>{children}</button>
+}
+
+function ResultTable({ result }: { result: QueryResult }) {
+  return <div className="scrollbar overflow-auto rounded-xl border border-white/10"><table className="min-w-full text-left text-sm"><thead className="bg-white/[.08] text-xs uppercase tracking-[.16em] text-slate-400"><tr>{result.columns.map((column) => <th key={column} className="whitespace-nowrap px-4 py-3 font-medium">{column}</th>)}</tr></thead><tbody>{result.rows.slice(0, 30).map((row, index) => <tr key={index} className="border-t border-white/[.08] text-slate-300">{row.map((value, cellIndex) => <td key={cellIndex} className="whitespace-nowrap px-4 py-3">{String(value ?? '—')}</td>)}</tr>)}</tbody></table></div>
+}
+
+function SafeVisualization({ result }: { result: QueryResult }) {
+  const visualization = useMemo(
+    () => analyzeResult(result),
+    [result]
+  )
+
+  if (visualization.type === "metric") {
+    return (
+      <section className="glass rounded-2xl p-5">
+        <div className="mb-3 text-sm font-semibold">
+          Result
+        </div>
+
+        <div className="flex min-h-32 items-center">
+          <div className="text-5xl font-semibold tracking-tight text-white">
+            {visualization.value?.toLocaleString()}
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  if (
+    (visualization.type === "bar" ||
+      visualization.type === "line") &&
+    visualization.data
+  ) {
+    const isLine = visualization.type === "line"
+
+    return (
+      <section className="glass rounded-2xl p-5">
+        <div className="mb-4 flex items-center justify-between gap-4">
+          <div className="text-sm font-semibold">
+            Returned columns
+          </div>
+
+          <span className="truncate text-xs text-slate-400">
+            {result.columns.join(" · ")}
+          </span>
+        </div>
+
+        <div className="h-64">
+          <ResponsiveContainer
+            width="100%"
+            height="100%"
+          >
+            {isLine ? (
+              <LineChart data={visualization.data}>
+                <CartesianGrid
+                  stroke="rgba(255,255,255,0.08)"
+                  vertical={false}
+                />
+
+                <XAxis
+                  dataKey="label"
+                  tick={{
+                    fill: "#9ca8c7",
+                    fontSize: 11,
+                  }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+
+                <YAxis
+                  tick={{
+                    fill: "#9ca8c7",
+                    fontSize: 11,
+                  }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+
+                <Tooltip
+                  contentStyle={{
+                    background: "rgba(14,19,39,.95)",
+                    border: "1px solid rgba(255,255,255,.18)",
+                    borderRadius: 12,
+                    color: "#fff",
+                  }}
+                />
+
+                <Line
+                  type="monotone"
+                  dataKey="value"
+                  stroke="#63d7ff"
+                  strokeWidth={2}
+                  dot={{ r: 3 }}
+                />
+              </LineChart>
+            ) : (
+              <BarChart data={visualization.data}>
+                <CartesianGrid
+                  stroke="rgba(255,255,255,0.08)"
+                  vertical={false}
+                />
+
+                <XAxis
+                  dataKey="label"
+                  tick={{
+                    fill: "#9ca8c7",
+                    fontSize: 11,
+                  }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+
+                <YAxis
+                  tick={{
+                    fill: "#9ca8c7",
+                    fontSize: 11,
+                  }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+
+                <Tooltip
+                  contentStyle={{
+                    background: "rgba(14,19,39,.95)",
+                    border: "1px solid rgba(255,255,255,.18)",
+                    borderRadius: 12,
+                    color: "#fff",
+                  }}
+                />
+
+                <Bar
+                  dataKey="value"
+                  fill="#63d7ff"
+                  radius={[6, 6, 0, 0]}
+                />
+              </BarChart>
+            )}
+          </ResponsiveContainer>
+        </div>
+      </section>
+    )
+  }
+
+  return (
+    <section className="glass rounded-2xl p-5">
+      <div className="mb-3 text-sm font-semibold">
+        Table view
+      </div>
+
+      <p className="mb-4 text-xs leading-5 text-slate-400">
+        The returned columns and rows do not provide an
+        unambiguous generic chart shape, so QueryIQ is showing
+        the result as a table.
+      </p>
+
+      <ResultTable result={result} />
+    </section>
+  )
+}
+
+function AddConnection({ onClose, onCreated }: { onClose: () => void; onCreated: (database: Database) => void }) {
+  const [form, setForm] = useState<ConnectionInput>(emptyConnection)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const update = (key: keyof ConnectionInput) => (event: React.ChangeEvent<HTMLInputElement>) => setForm((current) => ({ ...current, [key]: event.target.value }))
+  async function submit(event: React.FormEvent) { event.preventDefault(); setBusy(true); setError(''); try { const response = await api.createDatabase(form); onCreated({ id: response.database_id, name: response.name }); onClose() } catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to connect') } finally { setBusy(false) } }
+  return <div className="fixed inset-0 z-30 flex items-center justify-center bg-slate-950/75 p-4 backdrop-blur-md"><div className="glass-strong w-full max-w-lg rounded-3xl p-6"><div className="mb-6 flex items-start justify-between"><div><p className="text-xs uppercase tracking-[.2em] text-cyan-300">New source</p><h2 className="mt-2 text-2xl font-semibold">Connect a database</h2></div><button aria-label="Close connection dialog" onClick={onClose} className="rounded-lg p-2 text-slate-400 hover:bg-white/10"><X className="size-5" /></button></div><form onSubmit={submit} className="grid gap-3 sm:grid-cols-2">{(['name', 'host', 'port', 'database_name', 'username', 'password'] as const).map((key) => <label key={key} className={key === 'name' || key === 'host' ? 'sm:col-span-2' : ''}><span className="mb-1.5 block text-xs capitalize text-slate-400">{key.replace('_', ' ')}</span><input required={key !== 'port'} type={key === 'password' ? 'password' : 'text'} value={form[key]} onChange={update(key)} className="w-full rounded-xl border border-white/15 bg-slate-950/35 px-3 py-2.5 text-sm text-white outline-none transition focus:border-cyan-300/70 focus:bg-white/[.08]" /></label>)}{error && <p className="sm:col-span-2 text-sm text-pink-300">{error}</p>}<div className="mt-3 flex justify-end gap-2 sm:col-span-2"><GlassButton onClick={onClose}>Cancel</GlassButton><GlassButton type="submit" primary disabled={busy}>{busy ? <RefreshCw className="size-4 animate-spin" /> : <Plus className="size-4" />} {busy ? 'Connecting' : 'Connect source'}</GlassButton></div></form></div></div>
+}
+
+export function AnalystWorkspace() {
+  const [databases, setDatabases] = useState<Database[]>([])
+  const [selected, setSelected] = useState<Database | null>(null)
+  const [question, setQuestion] = useState('')
+  const [result, setResult] = useState<QueryResult | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [showAdd, setShowAdd] = useState(false)
+  const [mobileNav, setMobileNav] = useState(false)
+  const [view, setView] = useState<View>('workspace')
+  const [history, setHistory] = useState<string[]>([])
+  const [copied, setCopied] = useState(false)
+
+  async function loadDatabases() { try { const list = await api.listDatabases(); setDatabases(list); setSelected((current) => current && list.some((item) => item.id === current.id) ? current : list[0] || null) } catch { setDatabases([]) } }
+  useEffect(() => { void loadDatabases() }, [])
+  async function ask(value = question) { if (!value.trim() || !selected || loading) return; setLoading(true); setError(''); setResult(null); setHistory((current) => [value, ...current.filter((item) => item !== value)].slice(0, 8)); try { setResult(await api.query(value, selected.id)); setQuestion('') } catch (cause) { setError(cause instanceof Error ? cause.message : 'Query failed') } finally { setLoading(false) } }
+  async function copySql() { if (!result?.sql) return; await navigator.clipboard.writeText(result.sql); setCopied(true); window.setTimeout(() => setCopied(false), 1600) }
+
+  return <main className="min-h-screen"><div className="mx-auto flex min-h-screen max-w-[1600px] gap-3 p-3"><aside className={`${mobileNav ? 'fixed inset-y-3 left-3 z-20 flex w-[calc(100%-1.5rem)] max-w-72' : 'hidden'} glass-strong flex-col rounded-3xl p-4 lg:flex lg:w-64`}><div className="flex items-center gap-3 px-2 py-3"><div className="glow flex size-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-cyan-400"><Sparkles className="size-5 text-white" /></div><div><p className="font-semibold tracking-tight">Query<span className="text-cyan-300">IQ</span></p><p className="text-[10px] uppercase tracking-[.2em] text-slate-400">Data intelligence</p></div></div><nav className="mt-10 flex flex-col gap-2 text-sm"><button onClick={() => { setView('workspace'); setMobileNav(false) }} className={`rounded-xl px-3 py-3 text-left transition ${view === 'workspace' ? 'bg-white/[.12] text-white shadow-[inset_0_1px_rgba(255,255,255,.1)]' : 'text-slate-400 hover:bg-white/[.06] hover:text-white'}`}><LayoutDashboard className="mr-3 inline size-4 text-cyan-300" /> Analyst workspace</button><button onClick={() => { setView('history'); setMobileNav(false) }} className={`rounded-xl px-3 py-3 text-left transition ${view === 'history' ? 'bg-white/[.12] text-white' : 'text-slate-400 hover:bg-white/[.06] hover:text-white'}`}><Clock3 className="mr-3 inline size-4" /> Recent questions</button><button onClick={() => { setView('settings'); setMobileNav(false) }} className={`rounded-xl px-3 py-3 text-left transition ${view === 'settings' ? 'bg-white/[.12] text-white' : 'text-slate-400 hover:bg-white/[.06] hover:text-white'}`}><Settings2 className="mr-3 inline size-4" /> Workspace settings</button></nav><div className="mt-auto rounded-2xl border border-cyan-200/10 bg-cyan-300/[.05] p-4"><p className="flex items-center gap-2 text-xs font-semibold text-cyan-100"><Activity className="size-4" /> System ready</p><p className="mt-2 text-xs leading-5 text-slate-400">Frontend connected to the Django REST contract.</p></div></aside>
+
+    <section className="flex min-w-0 flex-1 flex-col gap-3"><header className="glass flex items-center justify-between rounded-2xl px-4 py-3 sm:px-6"><div className="flex items-center gap-3"><button aria-label="Open navigation" onClick={() => setMobileNav(true)} className="rounded-lg p-2 text-slate-300 hover:bg-white/10 lg:hidden"><Menu className="size-5" /></button><div><p className="text-xs uppercase tracking-[.22em] text-cyan-300">{view === 'workspace' ? 'Analyst workspace' : view === 'history' ? 'Conversation archive' : 'Workspace settings'}</p><p className="mt-1 text-sm text-slate-400">Ask questions. See the returned data clearly.</p></div></div><div className="flex items-center gap-2"><button aria-label="Refresh databases" onClick={() => void loadDatabases()} className="rounded-lg p-2 text-slate-300 hover:bg-white/10"><RefreshCw className="size-4" /></button><div className="hidden size-9 items-center justify-center rounded-full border border-white/20 bg-gradient-to-br from-violet-400/50 to-cyan-300/40 text-xs font-bold text-white sm:flex">QI</div></div></header>
+
+      {view === 'history' && <section className="glass flex-1 rounded-3xl p-6"><h1 className="text-2xl font-semibold">Recent questions</h1><p className="mt-2 text-sm text-slate-400">Your current session&apos;s questions appear here.</p><div className="mt-6 flex flex-col gap-2">{history.length ? history.map((item) => <button key={item} onClick={() => { setQuestion(item); setView('workspace') }} className="rounded-xl border border-white/10 bg-white/[.04] px-4 py-3 text-left text-sm text-slate-200 hover:bg-white/[.1]">{item}</button>) : <p className="rounded-xl border border-dashed border-white/10 p-5 text-sm text-slate-500">No questions yet.</p>}</div></section>}
+      {view === 'settings' && <section className="glass flex-1 rounded-3xl p-6"><h1 className="text-2xl font-semibold">Workspace settings</h1><p className="mt-2 text-sm text-slate-400">Manage the frontend connection to your Django REST service.</p><div className="mt-6 flex flex-wrap gap-3"><GlassButton onClick={() => setShowAdd(true)} primary><Plus className="size-4" /> Add database</GlassButton><GlassButton onClick={() => void loadDatabases()}><RefreshCw className="size-4" /> Refresh sources</GlassButton></div></section>}
+      {view === 'workspace' && <><div className="grid gap-3 xl:grid-cols-[1.25fr_.75fr]"><section className="glass-strong rounded-3xl p-5 sm:p-7"><div className="flex items-start justify-between gap-4"><div><p className="text-xs font-medium uppercase tracking-[.2em] text-violet-300">QueryIQ</p><h1 className="mt-3 max-w-2xl text-3xl font-semibold leading-tight tracking-tight text-balance sm:text-5xl">Ask your data anything.</h1><p className="mt-4 max-w-xl text-sm leading-6 text-slate-400">A focused interface for querying your connected sources through the existing API.</p></div><div className="hidden rounded-2xl border border-cyan-200/15 bg-cyan-300/[.07] p-3 text-cyan-200 sm:block"><BarChart3 className="size-6" /></div></div><div className="mt-8 rounded-2xl border border-white/15 bg-slate-950/35 p-2 shadow-[inset_0_1px_rgba(255,255,255,.08)]"><textarea value={question} onChange={(event) => setQuestion(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing && event.keyCode !== 229) { event.preventDefault(); void ask() } }} placeholder="Ask a question about your data..." className="min-h-24 w-full resize-none bg-transparent px-3 py-2 text-sm leading-6 text-white outline-none placeholder:text-slate-500" /><div className="flex items-center justify-between gap-3 border-t border-white/10 px-2 pt-2"><span className="hidden text-xs text-slate-500 sm:block">Enter to run · Shift + Enter for a new line</span><GlassButton onClick={() => void ask()} primary disabled={loading || !selected || !question.trim()}>{loading ? <RefreshCw className="size-4 animate-spin" /> : <Send className="size-4" />} {loading ? 'Running' : 'Run query'}</GlassButton></div></div><div className="mt-5 flex flex-wrap gap-2">{examples.map((example) => <button key={example} onClick={() => setQuestion(example)} className="rounded-full border border-white/10 bg-white/[.05] px-3 py-2 text-left text-xs text-slate-300 transition hover:border-cyan-200/30 hover:bg-cyan-200/[.08]">{example}</button>)}</div></section><section className="glass rounded-3xl p-5"><div className="flex items-center justify-between"><div><p className="text-xs uppercase tracking-[.18em] text-slate-500">Data source</p><h2 className="mt-2 text-lg font-semibold">Connected databases</h2></div><button aria-label="Add database" onClick={() => setShowAdd(true)} className="rounded-xl border border-white/15 bg-white/[.07] p-2.5 text-cyan-200 hover:bg-white/[.14]"><Plus className="size-4" /></button></div><div className="mt-5 flex flex-col gap-2">{databases.length ? databases.map((database) => <button key={database.id} onClick={() => setSelected(database)} className={`flex items-center gap-3 rounded-xl border px-3 py-3 text-left transition ${selected?.id === database.id ? 'border-cyan-200/30 bg-cyan-300/[.08]' : 'border-white/10 bg-white/[.03] hover:bg-white/[.08]'}`}><DatabaseIcon className="size-4 text-cyan-300" /><span className="min-w-0 flex-1 truncate text-sm text-slate-200">{database.name}</span>{selected?.id === database.id && <Check className="size-4 text-cyan-300" />}</button>) : <div className="rounded-xl border border-dashed border-white/10 p-4 text-sm text-slate-500">No databases connected yet.</div>}</div><button onClick={() => setShowAdd(true)} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-white/15 py-3 text-sm text-slate-400 hover:border-cyan-200/30 hover:text-cyan-200"><Plus className="size-4" /> Connect another source</button></section></div>{error && <div role="alert" className="glass rounded-2xl border-pink-300/20 p-4 text-sm text-pink-200">{error}</div>}{result && <div className="grid gap-3 xl:grid-cols-[.8fr_1.2fr]"><section className="glass rounded-2xl p-5"><div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2 text-sm font-semibold"><FileText className="size-4 text-violet-300" /> Answer</div><span className="rounded-full border border-emerald-300/20 bg-emerald-300/[.08] px-2 py-1 text-[10px] uppercase tracking-wider text-emerald-200">Returned</span></div><p className="mt-4 text-sm leading-7 text-slate-300">{result.explanation || 'The API returned a result for this question.'}</p><div className="mt-6 rounded-xl border border-white/10 bg-slate-950/35 p-3"><div className="mb-2 flex items-center justify-between text-xs text-slate-500"><span>SQL returned by API</span><button onClick={() => void copySql()} className="inline-flex items-center gap-1 text-cyan-300 hover:text-cyan-100">{copied ? <Check className="size-3" /> : <Copy className="size-3" />} {copied ? 'Copied' : 'Copy'}</button></div><code className="block max-h-36 overflow-auto whitespace-pre-wrap text-xs leading-5 text-slate-400">{result.sql || 'No SQL text returned.'}</code></div></section><SafeVisualization result={result} /></div>}</>}
+    </section></div>{showAdd && <AddConnection onClose={() => setShowAdd(false)} onCreated={(database) => { setDatabases((current) => [database, ...current]); setSelected(database) }} />}{mobileNav && <button aria-label="Close navigation" onClick={() => setMobileNav(false)} className="fixed inset-0 z-10 bg-slate-950/60 lg:hidden" />}</main>
+}

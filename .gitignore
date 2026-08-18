@@ -1,0 +1,12 @@
+.venv/
+.venv-1/
+__pycache__/
+*.pyc
+.env
+.vscode/
+.idea/
+advantages.txt
+.next/
+node_modules/
+.env.local
+tsconfig.tsbuildinfo
