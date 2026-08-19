@@ -11,7 +11,16 @@ from rag.pipeline import RAGSQLPipeline
 
 
 
-pipeline = RAGSQLPipeline()
+pipeline = None
+
+
+def get_pipeline():
+    global pipeline
+
+    if pipeline is None:
+        pipeline = RAGSQLPipeline()
+
+    return pipeline
 
 
 @csrf_exempt
@@ -65,7 +74,7 @@ def query_database(request):
 
         schema = introspector.inspect()
 
-        result = pipeline.run(
+        result = get_pipeline().run(
             question,
             database,
             schema,
