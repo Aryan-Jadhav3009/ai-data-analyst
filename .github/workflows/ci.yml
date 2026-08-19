@@ -17,13 +17,13 @@ jobs:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_DB: test_db
-          POSTGRES_USER: test_user
-          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: rag_analyst
+          POSTGRES_USER: rag_user
+          POSTGRES_PASSWORD: rag_password
         ports:
           - 5432:5432
         options: >-
-          --health-cmd="pg_isready -U test_user -d test_db"
+          --health-cmd="pg_isready -U rag_user -d rag_analyst"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
@@ -45,21 +45,21 @@ jobs:
       - name: Django system check
         env:
           DJANGO_SETTINGS_MODULE: config.settings
-          DB_NAME: test_db
-          DB_USER: test_user
-          DB_PASSWORD: test_password
-          DB_HOST: localhost
-          DB_PORT: 5432
+          POSTGRES_DB: rag_analyst
+          POSTGRES_USER: rag_user
+          POSTGRES_PASSWORD: rag_password
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5432
         run: python manage.py check
-
+      
       - name: Run Django tests
         env:
           DJANGO_SETTINGS_MODULE: config.settings
-          DB_NAME: test_db
-          DB_USER: test_user
-          DB_PASSWORD: test_password
-          DB_HOST: localhost
-          DB_PORT: 5432
+          POSTGRES_DB: rag_analyst
+          POSTGRES_USER: rag_user
+          POSTGRES_PASSWORD: rag_password
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5432
         run: python manage.py test
 
 
