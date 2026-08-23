@@ -47,7 +47,7 @@ Rules:
 - Only generate SELECT queries.
 - Do not INSERT, UPDATE, DELETE, DROP, ALTER, or modify data.
 - The SQL should directly answer the user's question.
-- Briefly explain the result.
+- Briefly explain the returned result.
 
 Return the result using the required structured format.
 """
