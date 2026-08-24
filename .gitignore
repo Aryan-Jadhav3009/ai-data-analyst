@@ -10,3 +10,4 @@ advantages.txt
 node_modules/
 .env.local
 tsconfig.tsbuildinfo
+aws_key
