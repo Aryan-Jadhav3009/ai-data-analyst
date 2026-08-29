@@ -37,6 +37,7 @@ def list_databases(request):
         data,
         safe=False
     )
+@csrf_exempt
 def create_database(request):
 
     if request.method != "POST":
