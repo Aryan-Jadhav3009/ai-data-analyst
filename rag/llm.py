@@ -42,6 +42,7 @@ USER QUESTION:
 
 Rules:
 - Generate valid PostgreSQL.
+- Only SELECT queries are allowed.
 - Use only tables and columns present in the schema.
 - Do not invent tables or columns.
 - Only generate SELECT queries.
