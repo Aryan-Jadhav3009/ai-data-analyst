@@ -6,7 +6,7 @@ import { Area, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { Activity, BarChart3, Check, ChevronDown, Clock3, Copy, Database as DatabaseIcon, FileText, LayoutDashboard, Menu, Plus, RefreshCw, Send, Settings2, Sparkles, Table2, X } from 'lucide-react'
 import { api, type ConnectionInput, type Database, type QueryResult } from '@/lib/api'
 
-const examples = ['Which tables have the most records?', 'Show me a summary of the available data', 'Compare the key values across my tables']
+const examples = ['Which customer placed the most orders?', 'Show me a summary of the available data', 'Compare the key values across my tables']
 const emptyConnection: ConnectionInput = { name: '', host: '', port: '5432', database_name: '', username: '', password: '' }
 
 type View = 'workspace' | 'history' | 'settings'
